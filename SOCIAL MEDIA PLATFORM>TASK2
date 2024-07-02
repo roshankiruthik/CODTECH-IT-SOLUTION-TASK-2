@@ -1,0 +1,111 @@
+import datetime
+import random
+import time
+
+# User class
+class User:
+    def __init__(self, name, username, profile_picture):
+        self.name = name
+        self.username = username
+        self.profile_picture = profile_picture
+        self.friends = []
+        self.followers = []
+        self.posts = []
+        self.notifications = []
+        self.privacy_settings = {'profile': 'public', 'posts': 'friends'}
+
+    def send_friend_request(self, other_user):
+        other_user.receive_friend_request(self)
+
+    def receive_friend_request(self, other_user):
+        self.notifications.append(f"{other_user.name} sent you a friend request.")
+
+    def accept_friend_request(self, other_user):
+        self.friends.append(other_user)
+        other_user.friends.append(self)
+        self.notifications.append(f"You are now friends with {other_user.name}.")
+        other_user.notifications.append(f"{self.name} accepted your friend request.")
+
+    def post(self, content):
+        post = Post(self, content)
+        self.posts.append(post)
+        self.notify_followers(post)
+
+    def notify_followers(self, post):
+        for follower in self.followers:
+            follower.notifications.append(f"{self.name} posted: {post.content}")
+
+    def get_news_feed(self):
+        news_feed = []
+        for friend in self.friends:
+            news_feed.extend(friend.posts)
+        news_feed.sort(key=lambda x: x.timestamp, reverse=True)
+        return news_feed
+
+    def set_privacy_settings(self, setting, value):
+        self.privacy_settings[setting] = value
+
+# Post class
+class Post:
+    def __init__(self, author, content):
+        self.author = author
+        self.content = content
+        self.timestamp = datetime.datetime.now()
+        self.likes = 0
+        self.comments = []
+
+    def like(self):
+        self.likes += 1
+
+    def comment(self, user, text):
+        comment = Comment(user, text)
+        self.comments.append(comment)
+
+# Comment class
+class Comment:
+    def __init__(self, author, text):
+        self.author = author
+        self.text = text
+        self.timestamp = datetime.datetime.now()
+
+# Example usage
+# Create users
+user1 = User("Emma Johnson", "emj24", "emma_profile.jpg")
+user2 = User("Mark Davis", "markd", "mark_profile.jpg")
+user3 = User("Sarah Chen", "sarahc", "sarah_profile.jpg")
+
+# Send and accept friend requests
+user1.send_friend_request(user2)
+user2.accept_friend_request(user1)
+
+user1.send_friend_request(user3)
+user3.accept_friend_request(user1)
+
+# Post content and interact
+user1.post("Just back from an amazing road trip!")
+user2.post("Trying out a new vegetarian chili recipe today.")
+user3.comment(user1, "Sounds like a great trip!")
+user1.posts[0].like()
+
+# Get news feed
+news_feed = user1.get_news_feed()
+for post in news_feed:
+    print(f"{post.author.name} posted: {post.content}")
+
+# Set privacy settings
+user1.set_privacy_settings('posts', 'followers')
+
+# Simulate real-time updates and content recommendations
+while True:
+    # Real-time updates
+    for user in [user1, user2, user3]:
+        if user.notifications:
+            notification = user.notifications.pop(0)
+            print(f"{user.name} received a notification: {notification}")
+
+    # Content recommendations
+    recommended_post = random.choice(user1.posts)
+    print(f"Connect Hub recommends: {recommended_post.content}")
+
+    # Wait for 5 seconds before the next update
+    time.sleep(5)
